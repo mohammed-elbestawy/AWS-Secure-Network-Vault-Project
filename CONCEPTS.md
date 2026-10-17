@@ -1,85 +1,193 @@
-# Concepts behind the design
+# 🧠 Design Concepts & Rationale
 
-Short explanations of the choices in this project. Written to be read before a review or an interview.
+This file explains **why** each decision was made — the questions most likely to come up in a review.
 
-## Network layout
-- **VPC / subnets.** A VPC is a private network. A subnet is public only because its route table has a route to an Internet Gateway. The ALB sits in public subnets; the app and the database sit in private subnets with no public IP.
-- **Three tiers.** Public (ALB, NAT instance, WireGuard gateway), app (Flask), data (RDS). The data subnets have only the `local` route, so there is no path to the internet at all.
+![AWS](https://img.shields.io/badge/AWS-VPC%20%7C%20TGW%20%7C%20PrivateLink-FF9900?style=flat-square&logo=amazonaws&logoColor=white) ![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=flat-square&logo=flask&logoColor=white) ![Region](https://img.shields.io/badge/Region-eu--north--1-232F3E?style=flat-square)
 
-## Security groups vs NACLs
-- A **security group** is stateful and attached to an ENI. Return traffic is allowed automatically. Rules reference other groups (`alb-sg` -> `app-sg` -> `db-sg`).
-- A **NACL** is stateless and attached to a subnet. Return traffic needs its own rule (ephemeral ports 1024-65535). It is a second layer that still protects when a group is misconfigured.
-- Anything that puts an ENI inside a subnet (Transit Gateway attachment, interface endpoint, load balancer) is subject to that subnet's NACL. A missing NACL rule for the TGW attachment caused this project's hardest-to-find fault.
+---
 
-## Reaching the instance without SSH
-- **Session Manager** gives a shell through IAM, with no inbound port and no key pair. It works in a private subnet through three interface endpoints (`ssm`, `ssmmessages`, `ec2messages`).
-- **Port forwarding** over Session Manager exposes the app on `localhost` of the admin's laptop, which is also a secure context for the browser crypto API.
+### Contents
 
-## Egress: NAT instance vs NAT gateway
-- A **NAT gateway** is managed, scales and is highly available, but bills hourly plus per GB.
-- A **NAT instance** is an EC2 instance running IP forwarding and masquerade. It is cheaper for a lab and teaches how NAT works. The trade-offs: you patch and size it, it is a single point of failure, and source/destination check must be disabled on it.
-- Here it is temporary: the private app instance needs egress only to install packages. It is removed before the logging tests so rejected outbound traffic shows up correctly.
+[![Network](https://img.shields.io/badge/Network_Design-30363D?style=flat-square)](#network) [![CIDR](https://img.shields.io/badge/CIDR_%26_Routes-30363D?style=flat-square)](#cidr) [![Connectivity](https://img.shields.io/badge/Connectivity-30363D?style=flat-square)](#connectivity) [![Hybrid](https://img.shields.io/badge/Hybrid_VPN-30363D?style=flat-square)](#hybrid) [![Edge](https://img.shields.io/badge/Edge_%26_DDoS-30363D?style=flat-square)](#edge) [![Application](https://img.shields.io/badge/Application_%26_Secrets-30363D?style=flat-square)](#app) [![Detection](https://img.shields.io/badge/Detection-30363D?style=flat-square)](#detection) [![IR](https://img.shields.io/badge/Incident_Response-30363D?style=flat-square)](#ir) [![Cost](https://img.shields.io/badge/Cost-30363D?style=flat-square)](#cost)
 
-## Connecting networks
-- **VPC Peering:** direct, simple, not transitive.
-- **Transit Gateway:** a hub. Scales to many VPCs and supports transitive routing.
-- **PrivateLink:** exposes one service (an NLB) to another VPC without opening the networks to each other.
+---
 
-## Hybrid connectivity: WireGuard instead of Site-to-Site VPN
-- The simulated on-prem network connects to VPC A over a **WireGuard** tunnel (UDP 51820) between two EC2 instances. WireGuard has a tiny codebase, modern fixed cryptography, and a short config. It trades away what the managed Site-to-Site VPN gives: no built-in redundancy (two tunnels) and no AWS-managed endpoint.
-- The gateway masquerades tunnel traffic, so VPC resources see the gateway's private IP and no extra routes are needed. A routed design (route entries to the gateway ENI) is the next step.
+<a id="network"></a>
+## 🌐 Network Design
 
-## Edge and application protection
-- **CloudFront** serves the static site from a private S3 bucket (Origin Access Control) and forwards `/api/*` to the ALB. One HTTPS domain, no CORS.
-- **WAF** on the ALB applies the managed core rules and a rate-based rule. Because CloudFront sits in front, the rate rule aggregates on the `X-Forwarded-For` client IP, not on the connecting IP.
-- **Shield Standard** is automatic.
+| Question | Answer |
+|---|---|
+| Why three tiers? | Each tier has a different exposure. Only the ALB needs to be public. The Flask server needs the ALB and nothing else. The database needs the app and nothing else. A mistake or a breach in one tier does not hand over the next. |
+| Why do the data subnets have only a `local` route? | The database then has no path to the internet to misconfigure later. Even a wrong security group cannot send data out, because there is no route to send it on. |
+| Security group or NACL? | Both, on purpose. A security group is stateful and attached to the interface, so return traffic is allowed automatically. A NACL is stateless and attached to the subnet, so the return path needs its own ephemeral-port rule. If one is configured wrongly, the other still protects. |
+| Why chain the security groups (`alb-sg → app-sg → db-sg`)? | Each group allows traffic only from the group before it, not from an address range. The rules keep working if addresses change and they read as the data path. |
+| Why Session Manager instead of a bastion host? | No SSH, no key pair, no inbound port and no extra server to patch. Access goes through IAM and is logged. It runs over three interface endpoints, so it works with no internet path at all. |
+| Why a NAT instance instead of a NAT gateway? | It does the same job for the price of a `t3.micro` and it shows the mechanics (IP forwarding, masquerade, source/destination check off). The trade-offs are a single point of failure, patching and limited throughput. It is also temporary: the private server only needs egress to install packages. |
+| Why must the NAT route be removed before the Flow Log tests? | While it exists, outbound traffic from the private tier succeeds. The "private server cannot call out" test would pass for the wrong reason and the incident drill would show no rejected traffic. |
+| Why were the subnet CIDRs rewritten after creating the VPC? | The VPC wizard applied its own CIDRs instead of the typed ones. Every NACL and security group rule depends on the CIDR, so each rule was rewritten against the real values. Resources are identified by CIDR or ID, never by the label. |
 
-## The vault
-- The browser generates a 256-bit key and encrypts with AES-GCM. The key travels in the URL fragment (`#...`), which browsers never send to the server.
-- The server stores ciphertext, an expiry and a view counter. Read and delete happen in one transaction (`SELECT ... FOR UPDATE`), so concurrent readers cannot both win.
-- Opening a link is two calls: `status` (no side effects) and `reveal` (consumes a view). Link previews and crawlers cannot burn a secret.
-- Database credentials are in **SSM Parameter Store** (SecureString), read through the same `ssm` interface endpoint Session Manager already needs. That avoids a separate Secrets Manager endpoint. The RDS master secret stays in Secrets Manager and is used only for the one-time schema bootstrap.
+---
 
-## Observation and response
-- **Flow Logs + Athena** answer "who was rejected, and from where".
-- **Traffic Mirroring** copies packets to a monitoring instance for inspection.
-- **CloudWatch** holds the dashboard and the alarm on unhealthy targets; **SNS** emails it.
-- **Incident response** isolates a suspect instance by swapping its security group and snapshotting its volume for investigation.
+<a id="cidr"></a>
+## 📐 CIDR Plan and Route Tables
 
-## Edge hardening details
-- **CloudFront Function.** A tiny script that runs at the edge on every `/api/*` request. It writes the real viewer address into `x-client-ip`, replacing anything the client sent. `X-Forwarded-For` cannot be trusted for this because the client controls its first value.
-- **WAF body size.** The core rule set blocks request bodies over 8 KB. The vault limits a secret to 5,000 bytes so its request body (about 6.9 KB) is never blocked by mistake.
+Reference tables for the network above. CIDRs do not overlap, which is what makes peering and Transit Gateway routing possible.
 
-## Recovery
-- **Golden image.** An AMI taken after the vault is installed. The service starts at boot and reads its settings from Parameter Store, so a replacement instance needs no internet and no manual install. It turns the incident-response recovery into a single launch.
+**Networks**
 
-## Services at a glance
+| Network | CIDR | Purpose |
+|---|---|---|
+| VPC A `sn-vpc` | `10.0.0.0/16` | The main application network |
+| VPC B `sn-vpc-b` | `10.1.0.0/16` | Shared services, reached through Transit Gateway and PrivateLink |
+| On-premises (simulated) `sn-onprem`, `eu-west-1` | `192.168.0.0/16` | Stand-in for an office |
+| WireGuard tunnel | `10.200.0.0/24` | Gateway `.1`, peer `.2` |
 
-| Service | What it is | Why it is used here | Without it |
+**Subnets**
+
+| Subnet | CIDR | AZ | Tier |
 |---|---|---|---|
-| VPC, subnets, route tables | A private network and its traffic rules | Three tiers with different exposure | No isolation |
-| Internet gateway | The VPC's door to the internet | Only the public tier routes to it | No public entry |
-| NAT instance | A server that forwards outbound traffic | Temporary egress for installs | Private servers cannot install packages |
-| Security groups | Stateful firewall per interface | Chain alb → app → db, least privilege | Flat network |
-| Network ACLs | Stateless firewall per subnet | Second layer, protects against SG mistakes | One control to fail |
-| EC2 | Virtual servers | Flask API, gateways, monitor | No compute |
-| ALB | HTTP load balancer | Public entry to the private app, health checks | App must be public |
-| RDS MySQL | Managed database | Stores ciphertext in the data tier | Self-managed DB |
-| Systems Manager Session Manager | Shell through IAM | No SSH, no key, no open port | Bastion host and keys |
-| VPC interface and gateway endpoints | Private paths to AWS services | Session Manager and S3 without internet | Needs NAT for AWS APIs |
-| Parameter Store | Encrypted configuration | DB password read at start, never on disk | Secret in code or user data |
-| IAM | Identity and permissions | Instance role and a four-parameter policy | Over-privileged server |
-| VPC peering | Direct link between two VPCs | Simplest path, built then replaced | n/a |
-| Transit Gateway | Regional routing hub | Hub-and-spoke between VPCs | Mesh of peering links |
-| PrivateLink | One service shared privately | Expose a single service, not a network | Open both networks |
-| WireGuard | Lightweight VPN | Encrypted tunnel to a simulated office | No hybrid link |
-| S3 | Object storage | Private static site and Flow Log storage | Web server needed |
-| CloudFront | CDN | One HTTPS domain, serves S3 and routes the API | No edge layer |
-| WAF | Web application firewall | Injection and rate protection | Attacks reach the app |
-| Shield Standard | Automatic DDoS protection | Free baseline at the edge | Exposed to floods |
-| Route 53 health check | Endpoint monitor | Observes the ALB | No availability signal |
-| VPC Flow Logs | Records of accepted and rejected flows | Evidence and detection | Blind network |
-| Athena | SQL over S3 | Query the logs | Manual log reading |
-| Traffic Mirroring | Packet copies to an instance | Deep inspection | Only metadata |
-| CloudWatch and SNS | Metrics, alarms, email | Alert on unhealthy targets | Silent failure |
-| EBS snapshots | Disk backups | Evidence in the incident drill | No forensic copy |
+| public 1 | `10.0.0.0/20` | `eu-north-1a` | ALB, NAT instance, WireGuard gateway |
+| public 2 | `10.0.16.0/20` | `eu-north-1b` | ALB |
+| app 1 | `10.0.128.0/20` | `eu-north-1a` | Flask server, endpoints, TGW attachment, monitor |
+| app 2 | `10.0.144.0/20` | `eu-north-1b` | Spare capacity |
+| data 1 | `10.0.32.0/24` | `eu-north-1a` | RDS |
+| data 2 | `10.0.33.0/24` | `eu-north-1b` | RDS subnet group |
+| VPC B private | `10.1.10.0/24` | `eu-north-1a` | Shared services instance, NLB |
+| on-prem public | `192.168.1.0/24` | `eu-west-1a` | WireGuard peer |
+
+**Route tables**
+
+| Route table | Destination | Target | Note |
+|---|---|---|---|
+| Public (wizard) | `10.0.0.0/16` | local | |
+| | `0.0.0.0/0` | Internet gateway | |
+| App (wizard) | `10.0.0.0/16` | local | |
+| | S3 prefix list | S3 gateway endpoint | Added by the wizard |
+| | `0.0.0.0/0` | NAT instance | **Temporary.** Removed before Flow Logs |
+| | `10.1.0.0/16` | Transit Gateway | Added in the TGW stage |
+| Data `sn-rt-data` | `10.0.0.0/16` | local | Nothing else: no path to the internet |
+| VPC B main | `10.1.0.0/16` | local | |
+| | `10.0.0.0/16` | Transit Gateway | |
+| On-prem | `192.168.0.0/16` | local | |
+| | `0.0.0.0/0` | Internet gateway | Needed for the WireGuard endpoint |
+| Transit Gateway (default) | `10.0.0.0/16`, `10.1.0.0/16` | attachments | Propagated |
+
+> The WireGuard gateway masquerades `10.200.0.0/24`, so VPC A needs no route for the tunnel network.
+
+---
+
+<a id="connectivity"></a>
+## 🔗 Connectivity: Peering, Transit Gateway, PrivateLink
+
+| Question | Answer |
+|---|---|
+| Peering or Transit Gateway? | Peering is a direct link between two VPCs and is not transitive. It is the simplest path and was built and tested first. Transit Gateway is a regional hub: attach each VPC once and route through it, so a third network is one more attachment, not a mesh of peering links. Peering was deleted before the Transit Gateway was created so the hub is the only path. |
+| Why did the Transit Gateway drop traffic when every route was correct? | A Transit Gateway attachment places an ENI in the subnet, and that subnet's NACL applies to it. Peering places no ENI, which is why the same rules worked before. Reachability Analyzer showed `SUBNET_ACL_RESTRICTION`. Fix: NACL rules for the attachment's own CIDR. |
+| Why is PrivateLink needed when the Transit Gateway already connects the VPCs? | They are different designs. The Transit Gateway opens routing between networks. PrivateLink exposes **one service** and nothing else, with no route between the networks. It is the right tool when you want to share a single endpoint, not a network. |
+| Why did PrivateLink time out while the target was `Healthy`? | The console attaches a security group to the NLB, and "enforce inbound rules on PrivateLink traffic" applies it to endpoint traffic. Reachability Analyzer said `Reachable` because it cannot see past the endpoint. The test also has to use the **endpoint** DNS name, not the NLB name, because the target is registered by instance ID and the return path differs. |
+| Why does VPC B serve a different page from VPC A? | The peering and PrivateLink checks look for the text `Shared Services`. Reusing the VPC A page would make a working test look failed. |
+
+---
+
+<a id="hybrid"></a>
+## 🏢 Hybrid Connectivity
+
+| Question | Answer |
+|---|---|
+| Why WireGuard instead of AWS Site-to-Site VPN? | There was no physical office or customer gateway device, so the "office" is a second VPC in another region. WireGuard shows the same pattern end to end (encrypted tunnel, private reachability, security group and NACL control) with a short, auditable configuration and the cost of one instance. |
+| What does WireGuard give up compared with Site-to-Site VPN? | Two managed tunnels in different AZs, BGP route exchange, and an AWS-managed endpoint. The gateway here is a single instance. In production it would be replaced by a Site-to-Site VPN attached to the Transit Gateway. |
+| Why does the gateway masquerade `10.200.0.0/24`? | VPC resources then see the gateway's private address as the source, so the VPC needs no extra route for the tunnel network. The gateway also has source/destination check disabled. |
+| Why does the office peer initiate the tunnel? | `PersistentKeepalive` on the peer keeps the NAT mapping open, so the gateway only needs to know the peer's key. It also lets the gateway security group allow UDP 51820 from one address only. |
+| What are Client VPN and Direct Connect? | Client VPN is a managed OpenVPN-style service for individual users who authenticate with certificates, Active Directory or SAML. Direct Connect is a dedicated or hosted private circuit into AWS with predictable latency. It is not encrypted by default, so a VPN or MACsec goes on top, and it takes weeks to provision. Both are concept items and were not built. |
+
+---
+
+<a id="edge"></a>
+## 🌍 Edge Security and DDoS
+
+| Question | Answer |
+|---|---|
+| Why CloudFront in front of the ALB and S3? | One HTTPS domain serves the static site from S3 and routes `/api/*` to the ALB. The browser crypto API only runs in a secure context, so HTTPS is required. CloudFront also applies the security headers and absorbs floods at the edge instead of at the origin. |
+| Why is the S3 bucket private with Origin Access Control? | CloudFront is the only reader. There is no public bucket and no static-website endpoint to bypass the edge protections. |
+| Which WAF rules, and why? | The AWS core rule set (SQL injection, XSS, common exploits) plus a rate-based rule of 100 requests per 5 minutes per client. The core set blocks known patterns, the rate rule blocks floods and guessing. |
+| Why is the maximum secret size 5,000 bytes? | The core rule set rejects request bodies over 8 KB. A 10,000-byte secret produces a body of about 13.7 KB and would be blocked as an attack. At 5,000 bytes the body is about 6.9 KB. |
+| Why does the rate rule count on a header written by a CloudFront Function? | The ALB sees a CloudFront edge address, not the client. `X-Forwarded-For` cannot be trusted because the client can send its own value and the first address is theirs. A viewer-request function overwrites `x-client-ip` with the real viewer address, so the WAF always counts on the true source. |
+| Shield Standard or Advanced? | Standard is free and automatic and covers common network and transport floods. Advanced adds a response team, cost protection and richer application-layer visibility for a monthly subscription. The lab uses Standard and lists Advanced as the production step. |
+| What would Firewall Manager add? | It applies WAF, Shield Advanced and security group policies across many accounts from one place. It needs AWS Organizations and a delegated administrator, so it is not meaningful in a single account. In a multi-account version this WAF rule set would become one policy applied to every account. |
+| Global Accelerator or CloudFront? | CloudFront is a CDN for HTTP with caching and WAF integration. Global Accelerator gives two static anycast IPs for any TCP or UDP traffic and fast regional failover, with no caching. The vault is an HTTP site with static assets, so CloudFront fits. |
+| What does the Route 53 health check do here? | It probes the ALB on HTTP 80 every 30 seconds with a failure threshold of 3. In production it would sit behind a failover record that switches to a maintenance page when the check fails. |
+| What is the DDoS plan in one line? | Absorb at the edge (CloudFront, Shield), filter at the application layer (WAF rate and managed rules), hide the origin (limit the ALB security group to the CloudFront prefix list, listed as the next step), detect (alarm and WAF metrics), respond (tighten the rate rule, escalate to Shield Advanced). |
+
+---
+
+<a id="app"></a>
+## 🔐 Application and Secrets
+
+| Question | Answer |
+|---|---|
+| How does the server never see the secret? | The browser generates a random AES-256 key, encrypts with AES-GCM and sends only the ciphertext. The key stays in the part of the link after `#`, which browsers never send to a server. |
+| Why open a secret in two steps (`status`, then `reveal`)? | Link previews and crawlers fetch URLs. A `GET` with no side effects means they cannot burn a secret. Only `POST /reveal` consumes a view. |
+| What if two people open the link at the same instant? | The read and the delete happen in one transaction with a locking read. A test fires 25 simultaneous reveals at one secret and exactly one succeeds. |
+| Why Parameter Store instead of Secrets Manager for the app credentials? | It uses the same `ssm` endpoint Session Manager already needs, so no extra endpoint is paid for. The RDS master secret stays in Secrets Manager and is used once to bootstrap the schema. |
+| How is the database user limited? | `vault_app` has `SELECT`, `INSERT`, `UPDATE`, `DELETE` on one table and TLS is required. A compromised application cannot read or change anything else. |
+| How is the IAM policy limited? | `ssm:GetParameter*` on four parameters only, and `kms:Decrypt` only when the call comes through the SSM service. No wildcard resources. |
+| Why does the server validate data that is already ciphertext? | It rejects anything that is not base64url or is too small or too large, so the endpoint cannot be used to store arbitrary data or to probe the parser. |
+| Why no inline scripts or styles? | Pages use external files only, so the Content-Security-Policy can be `script-src 'self'; style-src 'self'` and injected inline code would not run. |
+
+---
+
+<a id="detection"></a>
+## 📊 Monitoring and Detection
+
+| Question | Answer |
+|---|---|
+| Flow Logs or Traffic Mirroring? | Flow Logs record metadata (who talked to whom, on which port, accepted or rejected). Traffic Mirroring copies the packets themselves, encapsulated in VXLAN on UDP 4789, to a monitor instance for `tcpdump`. Metadata finds the event, packets explain it. |
+| Why Athena? | Flow Logs land in S3. Athena runs SQL on them with no server and no loading step, using partition projection so queries stay cheap. |
+| What does the detection query look for? | One source with rejected traffic on more than five distinct ports, which is the shape of a port scan. The same table answers other questions: management ports probed, egress that should not exist, and the largest byte totals. |
+| Why alarm on `UnHealthyHostCount`? | It is the earliest signal that the application tier stopped answering the load balancer, whatever the cause. The alarm emails through SNS. |
+
+**Detection use cases**
+
+| Use case | Signal | Response |
+|---|---|---|
+| Port scan from a compromised host | One source rejected on more than five ports | Isolate the instance, preserve evidence |
+| Outbound call-home | Rejected or unexpected egress from the private tier | Isolate, review the process |
+| Management port probing | Repeated rejects on 22 or 3389 | Confirm no port is open |
+| Data exfiltration | A source and destination pair with unusually large byte totals | Identify the process, block the destination |
+| Application outage | `UnHealthyHostCount` above 0 | Check the instance, fail over |
+| Web attack | WAF `BlockedRequests` rising | Review sampled requests, tune rules |
+
+---
+
+<a id="ir"></a>
+## 🚨 Incident Response
+
+| Question | Answer |
+|---|---|
+| What is the scenario? | `sn-app-a` is scanning internal addresses and trying to reach the internet. Because the private tier has no egress, the call-home shows up as rejected traffic. |
+| Why contain with a security group swap? | An empty `sn-isolation-sg` (no inbound, no outbound) is prepared in advance. Swapping it in stops new connections in seconds without touching the disk. Connections already tracked can continue until they idle out, so for an immediate cut a deny rule at the top of the subnet NACL is added as well. |
+| Why not stop or terminate the instance first? | Memory and running processes are evidence. The volume is snapshotted before any change that touches the disk, and the instance is terminated only after the snapshot is `Completed`. |
+| How is the service recovered? | A replacement is launched from the golden image taken after the vault was installed. The service starts at boot and reads its settings from Parameter Store, so it needs no internet and no manual install. The isolated instance is deregistered from the target group. |
+| What is rotated afterwards? | Anything the instance could read, which here is the database password in Parameter Store. |
+
+**Evidence collection**
+
+| Item | How | Why |
+|---|---|---|
+| Volume snapshot | Tagged `IncidentStatus=EVIDENCE`, description `IR sn-app-a` | Disk state at isolation, restorable to a forensic instance |
+| Console system log | Saved locally as `system-log.txt` | What the instance printed |
+| Flow log records | Athena query on the instance address | Network timeline |
+| Instance metadata | Instance ID, AMI, subnet, security groups before and after | Scope of the incident |
+| Change history | CloudTrail event history | Proves who changed the security group and when |
+| Timeline | UTC timestamps: detection, isolation, snapshot complete, recovery | Chain of events |
+
+---
+
+<a id="cost"></a>
+## 💰 Cost Decisions
+
+| Question | Answer |
+|---|---|
+| What bills by the hour? | The NAT instance and its Elastic IP, Transit Gateway attachments, interface endpoints, the ALB, RDS, EC2 and the WAF. None of them has a free tier that covers a multi-day build. |
+| How was cost controlled? | A 10 USD monthly budget with an email alert, the build done in the fewest days possible, the NAT removed as soon as the vault was installed, and everything deleted in the final cleanup step in an order that respects dependencies. |
+| Why is the WAF deleted when it is not being demoed? | It bills hourly for the Web ACL and its rules whether or not any requests arrive. |
