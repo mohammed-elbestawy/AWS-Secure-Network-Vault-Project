@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/style.css">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>Vault - open a secret</title>
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg><span>Vault</span></a>
+  <nav aria-label="Main">
+    <a href="/">New secret</a>
+    <a href="/security.html">How it works</a>
+    <a href="/about.html">The project</a>
+  </nav>
+</header>
+
+<main>
+  <section class="card">
+    <div id="insecure" class="notice warn" hidden>This page needs HTTPS (or localhost) to decrypt. Open the HTTPS address of the site.</div>
+
+    <div id="state-loading">
+      <h1>Checking the link</h1>
+      <p class="muted">One moment.</p>
+    </div>
+
+    <div id="state-invalid" hidden>
+      <h1>This link is not valid</h1>
+      <p>The link is incomplete or was changed. Ask the sender for the full link, including the part after <code>#</code>.</p>
+    </div>
+
+    <div id="state-gone" hidden>
+      <h1>This secret is gone</h1>
+      <p>It was already opened, it expired, or it never existed. For safety these cases look the same.</p>
+      <p><a class="btn" href="/">Create a new secret</a></p>
+    </div>
+
+    <div id="state-ready" hidden>
+      <h1>Someone shared a secret with you</h1>
+      <p id="ready-meta" class="muted"></p>
+      <p class="notice">Opening it uses up a view. Make sure you are ready to copy it.</p>
+      <button type="button" id="reveal" class="btn primary">Reveal secret</button>
+    </div>
+
+    <div id="state-revealed" hidden>
+      <h1>Your secret</h1>
+      <pre id="secret-text" class="secret mono"></pre>
+      <p id="revealed-meta" class="muted"></p>
+      <div id="secret-actions" class="actions">
+        <button type="button" id="copy-secret" class="btn">Copy</button>
+        <button type="button" id="hide-secret" class="btn">Hide</button>
+      </div>
+    </div>
+
+    <div id="state-failed" hidden>
+      <h1>Could not open the secret</h1>
+      <p id="decrypt-failed" hidden>The link key does not match the stored secret. The link may have been altered, and the view may already have been used.</p>
+      <p>Try again in a moment, or ask the sender for a new link.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <span>No accounts, no cookies, no analytics.</span>
+  <a href="/security.html">Security design</a>
+</footer>
+<script type="module" src="/assets/js/view.js"></script>
+</body>
+</html>

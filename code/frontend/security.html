@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/style.css">
+<title>Vault - security design</title>
+<meta name="description" content="How the vault keeps secrets private, and where its limits are.">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg><span>Vault</span></a>
+  <nav aria-label="Main">
+    <a href="/">New secret</a>
+    <a href="/security.html" aria-current="page">How it works</a>
+    <a href="/about.html">The project</a>
+  </nav>
+</header>
+
+<main>
+  <article class="card prose">
+    <h1>Security design</h1>
+    <p class="lead">The service is built so that a breach of the server or the database does not expose any secret.</p>
+
+    <h2>The link</h2>
+    <p><code class="mono">https://host/view.html?id=ID#KEY</code></p>
+    <ul>
+      <li><strong>ID</strong> is 192 random bits. It selects the encrypted record. It cannot decrypt anything.</li>
+      <li><strong>KEY</strong> is a fresh 256-bit AES key. It sits after the <code>#</code>, which browsers never send in a request.</li>
+    </ul>
+
+    <h2>What the server stores</h2>
+    <ul>
+      <li>The ciphertext (IV + AES-256-GCM output), padded to 256-byte blocks so its size hides the exact length.</li>
+      <li>An expiry time and a view counter.</li>
+    </ul>
+
+    <h2>What the server never has</h2>
+    <ul>
+      <li>The key, the plaintext, or any account or identity.</li>
+      <li>Full secret IDs in its logs. Only the first six characters are written.</li>
+    </ul>
+
+    <h2>Reading</h2>
+    <p>Opening a link is a two-step flow. The page first asks whether the secret exists, which does not use a view. A view is consumed only when you press the button, so link previews and crawlers cannot burn a secret. The read and the delete happen in one database transaction, so two people opening the same link at the same moment cannot both succeed.</p>
+
+    <h2>Limits you should know about</h2>
+    <ul>
+      <li>Anyone holding the full link can read the secret once. Send it over a channel you trust.</li>
+      <li>If your device or browser is compromised, the secret can be read there. Encryption does not help against that.</li>
+      <li>The page is served by the site, so you trust the site's code. Review the source before relying on it for high-value secrets.</li>
+      <li>There is no passphrase option yet.</li>
+    </ul>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <span>No accounts, no cookies, no analytics.</span>
+  <a href="/">New secret</a>
+</footer>
+</body>
+</html>
