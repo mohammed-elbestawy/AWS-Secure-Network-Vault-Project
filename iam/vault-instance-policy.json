@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadVaultDbParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ],
+      "Resource": [
+        "arn:aws:ssm:eu-north-1:ACCOUNT_ID:parameter/vault/db",
+        "arn:aws:ssm:eu-north-1:ACCOUNT_ID:parameter/vault/db/*"
+      ]
+    },
+    {
+      "Sid": "DecryptOnlyThroughSsm",
+      "Effect": "Allow",
+      "Action": "kms:Decrypt",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "ssm.eu-north-1.amazonaws.com"
+        }
+      }
+    }
+  ]
+}
