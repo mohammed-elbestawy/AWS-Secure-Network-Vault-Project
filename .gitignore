@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+.env
+*.pem
+*.key
+*.pub
+.DS_Store
+# screenshots must have the account id and email covered before they are committed
