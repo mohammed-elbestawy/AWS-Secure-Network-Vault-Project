@@ -1,0 +1,22 @@
+[Unit]
+Description=Zero-knowledge secret vault API
+After=network.target
+
+[Service]
+User=vault
+Group=vault
+EnvironmentFile=/etc/vault.env
+WorkingDirectory=/opt/vault/backend
+ExecStart=/opt/vault/venv/bin/gunicorn --workers 2 --bind 0.0.0.0:80 wsgi:app
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/log/vault
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

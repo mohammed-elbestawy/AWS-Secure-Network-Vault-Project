@@ -1,0 +1,11 @@
+[Unit]
+Description=Delete expired vault secrets
+After=network.target
+
+[Service]
+Type=oneshot
+User=vault
+Group=vault
+EnvironmentFile=/etc/vault.env
+WorkingDirectory=/opt/vault/backend
+ExecStart=/opt/vault/venv/bin/python purge.py
