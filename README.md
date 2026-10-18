@@ -2,11 +2,12 @@
 
 A three-tier private network on AWS with edge protection, hybrid connectivity and full monitoring, running a real application: a secret-sharing service where **the server never sees the secret**. Built and tested step by step, including the faults hit along the way.
 
-![AWS](https://img.shields.io/badge/AWS-VPC%20%7C%20TGW%20%7C%20PrivateLink-FF9900?style=flat-square&logo=amazonaws&logoColor=white) ![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=flat-square&logo=flask&logoColor=white) ![JavaScript](https://img.shields.io/badge/Frontend-HTML%20%7C%20CSS%20%7C%20JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black) ![WireGuard](https://img.shields.io/badge/VPN-WireGuard-88171A?style=flat-square&logo=wireguard&logoColor=white) [![CI](https://github.com/mohammed-elbestawy/AWS-Secure-Network-Vault-Project/actions/workflows/ci.yml/badge.svg)](https://github.com/mohammed-elbestawy/AWS-Secure-Network-Vault-Project/actions/workflows/ci.yml) ![Tests](https://img.shields.io/badge/Tests-39%20passing-2EA44F?style=flat-square) ![Status](https://img.shields.io/badge/Status-Deployed%20%26%20Tested-2EA44F?style=flat-square) ![Region](https://img.shields.io/badge/Region-eu--north--1-232F3E?style=flat-square)
-
-| Tiers | Regions | Ways to connect networks | Build steps | Automated tests |
-|:---:|:---:|:---:|:---:|:---:|
-| 3 | 2 | 4 (peering, TGW, PrivateLink, WireGuard) | 30 | 39 |
+![AWS](https://img.shields.io/badge/AWS-VPC%20%7C%20TGW%20%7C%20PrivateLink-FF9900?style=flat-square&logo=amazonaws&logoColor=white)
+![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=flat-square&logo=flask&logoColor=white)
+![JavaScript](https://img.shields.io/badge/Frontend-HTML%20%7C%20CSS%20%7C%20JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![WireGuard](https://img.shields.io/badge/VPN-WireGuard-88171A?style=flat-square&logo=wireguard&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Deployed%20%26%20Tested-2EA44F?style=flat-square)
+![Region](https://img.shields.io/badge/Region-eu--north--1-232F3E?style=flat-square)
 
 ---
 
@@ -16,14 +17,13 @@ A three-tier private network on AWS with edge protection, hybrid connectivity an
 - 🏗️ [Architecture](#architecture)
 - 🎬 [Demo](#demo)
 - 📌 [Requirements Coverage](#requirements)
-- 🧠 [How the Vault Works](#vault)
+- 🧠 [The Vault](#vault)
 - 🔐 [Security Decisions](#security)
-- ✅ [Live Test Result](#test)
+- ✅ [Test Results](#test)
 - 🐛 [Problems Found While Building](#problems)
 - 🧩 [Skills Demonstrated](#skills)
 - 💰 [Cost Decisions](#cost)
-- 🚀 [Possible Improvements](#improvements)
-- 🧪 [Run It Locally](#local)
+- 🚀 [Residual Risks and Improvements](#improvements)
 - 📚 [Documentation](#docs)
 - 📁 [Repository Structure](#structure)
 
@@ -72,15 +72,11 @@ Region: `eu-north-1` for the network and the application, `eu-west-1` for the si
 <a id="demo"></a>
 ## 🎬 Demo
 
-Short screen recordings of the three moments worth watching, taken on the live deployment. Each file is under 25 MB so GitHub plays it in the browser.
+**Demo video:** [`screenshots/demo.mp4`](screenshots/demo.mp4?raw=true)
 
-| Video | What it shows |
-|---|---|
-| [▶ Session Manager](screenshots/11-ssm-session.mp4) | A shell on the private server with no SSH key, the app answering on `localhost`, the database reachable |
-| [▶ WAF rate limit](screenshots/22-waf-rate-limit.mp4) | 250 requests to `/api/health` through CloudFront: `200`, then `403` once the rate rule trips |
-| [▶ Incident response](screenshots/28-incident-response.mp4) | The compromised instance isolated by swapping its security group |
+The project was deployed on AWS for the review and torn down afterwards, so the screenshots in [`screenshots/`](screenshots/) and the video document the live run.
 
-The screenshots for every other stage are in [`STEPS.md`](STEPS.md).
+▶ [Watch the incident response drill](screenshots/28-incident-response.mp4?raw=true)
 
 ---
 
@@ -93,14 +89,14 @@ The screenshots for every other stage are in [`STEPS.md`](STEPS.md).
 | 2. Connectivity | Peering, endpoints, PrivateLink, Transit Gateway, Site-to-Site VPN, Client VPN, Direct Connect, routing tests | All built except the VPN trio: WireGuard tunnel to a simulated office, Client VPN and Direct Connect compared | [STEPS](STEPS.md#peering), [CONCEPTS](CONCEPTS.md#hybrid) |
 | 3. Edge security | CloudFront with S3, WAF, Shield, Firewall Manager, Route 53, Global Accelerator, edge tests | CloudFront, WAF rules, Shield Standard, health check, attack demo. Firewall Manager and Global Accelerator compared | [STEPS](STEPS.md#cloudfront), [CONCEPTS](CONCEPTS.md#edge) |
 | 4. Monitoring and IR | Flow Logs, Traffic Mirroring, CloudWatch, Athena, compromised-instance drill | All built, plus a rehearsed isolation, snapshot and recovery | [STEPS](STEPS.md#flowlogs), [CONCEPTS](CONCEPTS.md#ir) |
-| Deliverables | Diagram, CIDR plan, route tables, rules, test results, runbook, report | This README, [`CONCEPTS.md`](CONCEPTS.md#cidr) (CIDR plan, routes, runbook), [`STEPS.md`](STEPS.md) (rules, tests) | |
+| Deliverables | Diagram, CIDR plan, route tables, rules, test results, runbook, report | This README, `CONCEPTS.md` (CIDR plan, routes, runbook), `STEPS.md` (rules, tests) | |
 
 Two deliberate substitutions, each justified in [CONCEPTS](CONCEPTS.md): a **NAT instance** instead of a NAT gateway, and **WireGuard** instead of AWS Site-to-Site VPN.
 
 ---
 
 <a id="vault"></a>
-## 🧠 How the Vault Works
+## 🧠 The Vault
 
 The browser encrypts, the server stores noise.
 
@@ -114,14 +110,12 @@ create  browser: key = random(256) → AES-GCM(pad(secret)) → POST ciphertext
 reveal  browser: POST /reveal → ciphertext (record deleted in the same transaction) → decrypt with KEY
 ```
 
-| Property | How |
-|---|---|
-| **Two-step open** | `GET /status` has no side effects and `POST /reveal` consumes a view, so link previews cannot burn a secret |
-| **Atomic read and burn** | A locking read then delete in one transaction. A test fires 25 simultaneous reveals at one secret and exactly one succeeds |
-| **Padding and limits** | Plaintext is padded to 256-byte blocks. A secret is limited to 5,000 bytes so the request body stays under the 8 KB WAF rule |
-| **No inline code** | Pages use external scripts and styles only, so the CSP is `script-src 'self'; style-src 'self'` |
+- **Two-step open.** `GET /status` has no side effects and `POST /reveal` consumes a view, so link previews cannot burn a secret.
+- **Atomic read and burn.** A locking read then delete in one transaction. A test fires 25 simultaneous reveals at one secret and exactly one succeeds.
+- **Padding and limits.** Plaintext is padded to 256-byte blocks. A secret is limited to 5,000 bytes so the request body stays under the 8 KB WAF rule.
+- **No inline code.** Pages use external scripts and styles only, so the CSP is `script-src 'self'; style-src 'self'`.
 
-> The browser crypto API needs a secure context, so the site is opened over HTTPS (CloudFront).
+The browser crypto API needs a secure context, so the site is opened over HTTPS (CloudFront).
 
 ---
 
@@ -140,9 +134,13 @@ The reasoning behind each choice is in [`CONCEPTS.md`](CONCEPTS.md).
 ---
 
 <a id="test"></a>
-## ✅ Live Test Result
+## ✅ Test Results
 
-The project was deployed on AWS and tested end to end, then torn down so nothing keeps billing. Build evidence for each stage is in [`STEPS.md`](STEPS.md), and the key moments are recorded in the [Demo](#demo) videos.
+```bash
+python -m unittest discover -s code/tests -v     # 29 tests: API, validation, concurrency, MySQL transaction flow
+node --test code/tests/crypto.test.mjs           # 10 tests: round trip, tamper, wrong key, padding, limits
+bash code/scripts/smoke-test.sh http://localhost # 10 checks against a running instance
+```
 
 | Check | Result |
 |---|---|
@@ -155,16 +153,6 @@ The project was deployed on AWS and tested end to end, then torn down so nothing
 | WAF blocks SQLi and XSS probes, rate limit trips | ✅ |
 | Rejected traffic found with Athena | ✅ |
 | Compromised instance isolated, evidence kept, service recovered | ✅ |
-
-The code is covered by automated tests:
-
-```bash
-python -m unittest discover -s code/tests -v     # 29 tests: API, validation, concurrency, MySQL transaction flow
-node --test code/tests/crypto.test.mjs           # 10 tests: round trip, tamper, wrong key, padding, limits
-bash code/scripts/smoke-test.sh http://localhost # 10 checks against a running instance
-```
-
-**Attack demo output**
 
 ![Attack demo output](screenshots/V4-attack-demo.png)
 
@@ -198,14 +186,12 @@ bash code/scripts/smoke-test.sh http://localhost # 10 checks against a running i
 <a id="cost"></a>
 ## 💰 Cost Decisions
 
-Hourly billed items are the NAT instance and its Elastic IP, Transit Gateway attachments, interface endpoints, the ALB, RDS, EC2 and the WAF. None has a free tier that covers a multi-day build, so the build was done in the fewest days possible and everything was deleted afterwards, in an order that respects dependencies.
-
-The NAT instance was chosen over a NAT gateway for the same reason, and removed before the logging tests, because leaving it would make the reject tests pass for the wrong reason. The cost report is in [`STEPS.md`](STEPS.md#cost).
+Hourly billed items are the NAT instance and its Elastic IP, Transit Gateway attachments, interface endpoints, the ALB, RDS, EC2 and the WAF. The build was done in the fewest days possible and everything was deleted afterwards. The NAT instance was chosen over a NAT gateway for the same reason and removed before the logging tests, because leaving it would make the reject tests pass for the wrong reason. The cost report is `screenshots/29-cost-report.png`.
 
 ---
 
 <a id="improvements"></a>
-## 🚀 Possible Improvements
+## 🚀 Residual Risks and Improvements
 
 | Risk | Next step |
 |---|---|
@@ -215,22 +201,6 @@ The NAT instance was chosen over a NAT gateway for the same reason, and removed 
 | No threat-intelligence layer | GuardDuty and the WAF IP reputation list |
 | Manual database password rotation | Secrets Manager rotation |
 | Console-built | Terraform for the whole stack |
-
----
-
-<a id="local"></a>
-## 🧪 Run It Locally
-
-The app runs on an in-memory store by default, so no AWS account or database is needed. `localhost` counts as a secure context, so the browser crypto works over plain HTTP.
-
-```bash
-cd code/backend
-pip install -r requirements.txt
-VAULT_FRONTEND_DIR=../frontend flask --app wsgi run -p 8099
-# open http://127.0.0.1:8099
-```
-
-With the server running, `BASE_URL=http://127.0.0.1:8099 node code/tests/e2e-local.mjs` runs the full browser-crypto-to-API round trip.
 
 ---
 
@@ -250,15 +220,14 @@ AWS-Secure-Network-Vault-Project/
 ├── README.md
 ├── STEPS.md
 ├── CONCEPTS.md
-├── LICENSE
-├── .github/workflows/ci.yml   tests and script checks on every push
-├── screenshots/            architecture diagram (PNG and draw.io), build evidence, three short videos, README index
+├── screenshots/            evidence, architecture diagram (PNG and draw.io), demo video
 ├── iam/
-│   └── vault-instance-policy.json
+│   ├── vault-instance-policy.json
+│   └── README.md
 └── code/
     ├── backend/            Flask API, store, validation, schema
     ├── frontend/           create, view, security and project pages (HTML, CSS, JavaScript)
-    ├── deploy/             install script and systemd units
+    ├── deploy/             install script, systemd units, CloudWatch agent config
     ├── infra/              NAT instance, WireGuard and CloudFront function
     ├── scripts/            database bootstrap, smoke test, attack demo
     └── tests/              API, crypto, end-to-end
