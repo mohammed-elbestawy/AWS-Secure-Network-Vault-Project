@@ -2,7 +2,7 @@
 
 A three-tier private network on AWS with edge protection, hybrid connectivity and full monitoring, running a real application: a secret-sharing service where **the server never sees the secret**. Built and tested step by step, including the faults hit along the way.
 
-![AWS](https://img.shields.io/badge/AWS-VPC%20%7C%20TGW%20%7C%20PrivateLink-FF9900?style=flat-square&logo=amazonaws&logoColor=white) ![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=flat-square&logo=flask&logoColor=white) ![JavaScript](https://img.shields.io/badge/Frontend-HTML%20%7C%20CSS%20%7C%20JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black) ![WireGuard](https://img.shields.io/badge/VPN-WireGuard-88171A?style=flat-square&logo=wireguard&logoColor=white) ![Tests](https://img.shields.io/badge/Tests-39%20passing-2EA44F?style=flat-square) ![Status](https://img.shields.io/badge/Status-Deployed%20%26%20Tested-2EA44F?style=flat-square) ![Region](https://img.shields.io/badge/Region-eu--north--1-232F3E?style=flat-square)
+![AWS](https://img.shields.io/badge/AWS-VPC%20%7C%20TGW%20%7C%20PrivateLink-FF9900?style=flat-square&logo=amazonaws&logoColor=white) ![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=flat-square&logo=flask&logoColor=white) ![JavaScript](https://img.shields.io/badge/Frontend-HTML%20%7C%20CSS%20%7C%20JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black) ![WireGuard](https://img.shields.io/badge/VPN-WireGuard-88171A?style=flat-square&logo=wireguard&logoColor=white) [![CI](https://github.com/mohammed-elbestawy/AWS-Secure-Network-Vault-Project/actions/workflows/ci.yml/badge.svg)](https://github.com/mohammed-elbestawy/AWS-Secure-Network-Vault-Project/actions/workflows/ci.yml) ![Tests](https://img.shields.io/badge/Tests-39%20passing-2EA44F?style=flat-square) ![Status](https://img.shields.io/badge/Status-Deployed%20%26%20Tested-2EA44F?style=flat-square) ![Region](https://img.shields.io/badge/Region-eu--north--1-232F3E?style=flat-square)
 
 | Tiers | Regions | Ways to connect networks | Build steps | Automated tests |
 |:---:|:---:|:---:|:---:|:---:|
@@ -250,7 +250,9 @@ AWS-Secure-Network-Vault-Project/
 ├── README.md
 ├── STEPS.md
 ├── CONCEPTS.md
-├── screenshots/            architecture diagram (PNG and draw.io), build evidence, three short videos
+├── LICENSE
+├── .github/workflows/ci.yml   tests and script checks on every push
+├── screenshots/            architecture diagram (PNG and draw.io), build evidence, three short videos, README index
 ├── iam/
 │   └── vault-instance-policy.json
 └── code/

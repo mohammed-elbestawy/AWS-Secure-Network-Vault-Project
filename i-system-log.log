@@ -1,0 +1,114 @@
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[0m[35m[40m[2J[01;01H[=3h[2J[01;01H[0m[37m[40m  Booting `Amazon Linux (6.18.54-121.166.amzn2023.x86_64) 2023'
+
+[    2.664750] loop: module loaded
+[    2.666025] fuse: init (API version 7.45)
+[    2.734767] systemd-journald[1120]: Received client request to flush runtime journal.
+[    3.030749] RPC: Registered named UNIX socket transport module.
+[    3.031469] RPC: Registered udp transport module.
+[    3.032104] RPC: Registered tcp transport module.
+[    3.032768] RPC: Registered tcp-with-tls transport module.
+[    3.033475] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    3.158122] ena 0000:00:05.0: Elastic Network Adapter (ENA) v2.17.4g
+[    3.162025] input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input0
+[    3.175755] i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
+[    3.176964] i8042: Warning: Keylock active
+[    3.177501] ena 0000:00:05.0: ENA device version: 0.10
+[    3.178092] ena 0000:00:05.0: ENA controller version: 0.0.1 implementation version 1
+[    3.178698] serio: i8042 KBD port at 0x60,0x64 irq 1
+[    3.179820] serio: i8042 AUX port at 0x60,0x64 irq 12
+[    3.202861] ACPI: button: Power Button [PWRF]
+[    3.203412] input: Sleep Button as /devices/LNXSYSTM:00/LNXSLPBN:00/input/input1
+[    3.205394] ACPI: button: Sleep Button [SLPF]
+[    3.261194] ena 0000:00:05.0: LLQ is not supported Fallback to host mode policy.
+[    3.274589] ena 0000:00:05.0: Elastic Network Adapter (ENA) found at mem 80400000, mac addr 06:ff:fc:84:a9:39
+[    3.320255] ena 0000:00:05.0 ens5: renamed from eth0
+[    3.338473] nvme nvme0: using unchecked data buffer
+[    3.489041] zram_generator::config[1694]: zram0: system has too much memory (913MB), limit is 800MB, ignoring.
+[    4.753824] cloud-init[1849]: Cloud-init v. 22.2.2 running 'init' at Sat, 17 Oct 2026 14:24:17 +0000. Up 4.72 seconds.
+[    4.831713] cloud-init[1849]: ci-info: ++++++++++++++++++++++++++++++++++++++Net device info+++++++++++++++++++++++++++++++++++++++
+[    4.833661] cloud-init[1849]: ci-info: +--------+------+-----------------------------+---------------+--------+-------------------+
+[    4.835495] cloud-init[1849]: ci-info: | Device |  Up  |           Address           |      Mask     | Scope  |     Hw-Address    |
+[    4.837284] cloud-init[1849]: ci-info: +--------+------+-----------------------------+---------------+--------+-------------------+
+[    4.839089] cloud-init[1849]: ci-info: |  ens5  | True |         10.0.143.130        | 255.255.240.0 | global | 06:ff:fc:84:a9:39 |
+[    4.840903] cloud-init[1849]: ci-info: |  ens5  | True | fe80::4ff:fcff:fe84:a939/64 |       .       |  link  | 06:ff:fc:84:a9:39 |
+[    4.842799] cloud-init[1849]: ci-info: |   lo   | True |          127.0.0.1          |   255.0.0.0   |  host  |         .         |
+[    4.844585] cloud-init[1849]: ci-info: |   lo   | True |           ::1/128           |       .       |  host  |         .         |
+[    4.846374] cloud-init[1849]: ci-info: +--------+------+-----------------------------+---------------+--------+-------------------+
+[    4.848209] cloud-init[1849]: ci-info: +++++++++++++++++++++++++++++Route IPv4 info++++++++++++++++++++++++++++++
+[    4.849769] cloud-init[1849]: ci-info: +-------+-------------+------------+-----------------+-----------+-------+
+[    4.851365] cloud-init[1849]: ci-info: | Route | Destination |  Gateway   |     Genmask     | Interface | Flags |
+[    4.852946] cloud-init[1849]: ci-info: +-------+-------------+------------+-----------------+-----------+-------+
+[    4.854518] cloud-init[1849]: ci-info: |   0   |   0.0.0.0   | 10.0.128.1 |     0.0.0.0     |    ens5   |   UG  |
+[    4.856146] cloud-init[1849]: ci-info: |   1   |   10.0.0.2  | 10.0.128.1 | 255.255.255.255 |    ens5   |  UGH  |
+[    4.857701] cloud-init[1849]: ci-info: |   2   |  10.0.128.0 |  0.0.0.0   |  255.255.240.0  |    ens5   |   U   |
+[    4.859287] cloud-init[1849]: ci-info: |   3   |  10.0.128.1 |  0.0.0.0   | 255.255.255.255 |    ens5   |   UH  |
+[    4.860860] cloud-init[1849]: ci-info: +-------+-------------+------------+-----------------+-----------+-------+
+[    4.862437] cloud-init[1849]: ci-info: +++++++++++++++++++Route IPv6 info+++++++++++++++++++
+[    4.863778] cloud-init[1849]: ci-info: +-------+-------------+---------+-----------+-------+
+[    4.865050] cloud-init[1849]: ci-info: | Route | Destination | Gateway | Interface | Flags |
+[    4.866350] cloud-init[1849]: ci-info: +-------+-------------+---------+-----------+-------+
+[    4.867678] cloud-init[1849]: ci-info: |   0   |  fe80::/64  |    ::   |    ens5   |   U   |
+[    4.869007] cloud-init[1849]: ci-info: |   2   |    local    |    ::   |    ens5   |   U   |
+[    4.870364] cloud-init[1849]: ci-info: |   3   |  multicast  |    ::   |    ens5   |   U   |
+[    4.871715] cloud-init[1849]: ci-info: +-------+-------------+---------+-----------+-------+
+[    5.707253] cloud-init[1849]: Generating public/private ed25519 key pair.
+[    5.708519] cloud-init[1849]: Your identification has been saved in /etc/ssh/ssh_host_ed25519_key
+[    5.709955] cloud-init[1849]: Your public key has been saved in /etc/ssh/ssh_host_ed25519_key.pub
+[    5.711405] cloud-init[1849]: The key fingerprint is:
+[    5.712219] cloud-init[1849]: SHA256:eUiB/g2vqUuikV+5sEJpEe4yZbEp5w5tsxsH3j8Qkes root@ip-10-0-143-130.eu-north-1.compute.internal
+[    5.714006] cloud-init[1849]: The key's randomart image is:
+[    5.714936] cloud-init[1849]: +--[ED25519 256]--+
+[    5.715787] cloud-init[1849]: |     . ..        |
+[    5.716578] cloud-init[1849]: |  o o .  .       |
+[    5.717403] cloud-init[1849]: | . = +  .        |
+[    5.718227] cloud-init[1849]: |. O o ...o       |
+[    5.719038] cloud-init[1849]: | O.+ . .S+.      |
+[    5.719788] cloud-init[1849]: |+.X+E  ...o      |
+[    5.720614] cloud-init[1849]: | O=o=.+  o       |
+[    5.721356] cloud-init[1849]: |  +* B..o        |
+[    5.722214] cloud-init[1849]: |  ooo =+         |
+[    5.723051] cloud-init[1849]: +----[SHA256]-----+
+[    5.723830] cloud-init[1849]: Generating public/private ecdsa key pair.
+[    5.724901] cloud-init[1849]: Your identification has been saved in /etc/ssh/ssh_host_ecdsa_key
+[    5.726303] cloud-init[1849]: Your public key has been saved in /etc/ssh/ssh_host_ecdsa_key.pub
+[    5.727630] cloud-init[1849]: The key fingerprint is:
+[    5.728456] cloud-init[1849]: SHA256:ILoAkMSnM9hpzZYtkspLUdo0034K+miJieBjWGDQ4rw root@ip-10-0-143-130.eu-north-1.compute.internal
+[    5.730260] cloud-init[1849]: The key's randomart image is:
+[    5.731115] cloud-init[1849]: +---[ECDSA 256]---+
+[    5.731917] cloud-init[1849]: |++  .            |
+[    5.732707] cloud-init[1849]: |=..* .           |
+[    5.733499] cloud-init[1849]: |*oB==o.          |
+[    5.734359] cloud-init[1849]: |+X*+*o.o         |
+[    5.735184] cloud-init[1849]: |++Bo..o S        |
+[    5.735988] cloud-init[1849]: |oE.. .           |
+[    5.736747] cloud-init[1849]: |Bo*              |
+[    5.737544] cloud-init[1849]: |=O .             |
+[    5.738320] cloud-init[1849]: |o .              |
+[    5.739125] cloud-init[1849]: +----[SHA256]-----+
+[    6.269139] cloud-init[1938]: Cloud-init v. 22.2.2 running 'modules:config' at Sat, 17 Oct 2026 14:24:19 +0000. Up 6.18 seconds.
+[    6.851498] cloud-init[1948]: Cloud-init v. 22.2.2 running 'modules:final' at Sat, 17 Oct 2026 14:24:20 +0000. Up 6.80 seconds.
+[    7.020812] zram_generator::config[1977]: zram0: system has too much memory (913MB), limit is 800MB, ignoring.
+[    7.143960] cloud-init[1948]: Created symlink /etc/systemd/system/multi-user.target.wants/web.service → /etc/systemd/system/web.service.
+[    7.287992] zram_generator::config[2003]: zram0: system has too much memory (913MB), limit is 800MB, ignoring.
+ci-info: no authorized SSH keys fingerprints found for user ec2-user.
+<14>Oct 17 14:24:20 cloud-init: #############################################################
+<14>Oct 17 14:24:20 cloud-init: -----BEGIN SSH HOST KEY FINGERPRINTS-----
+<14>Oct 17 14:24:20 cloud-init: 256 SHA256:ILoAkMSnM9hpzZYtkspLUdo0034K+miJieBjWGDQ4rw root@ip-10-0-143-130.eu-north-1.compute.internal (ECDSA)
+<14>Oct 17 14:24:20 cloud-init: 256 SHA256:eUiB/g2vqUuikV+5sEJpEe4yZbEp5w5tsxsH3j8Qkes root@ip-10-0-143-130.eu-north-1.compute.internal (ED25519)
+<14>Oct 17 14:24:20 cloud-init: -----END SSH HOST KEY FINGERPRINTS-----
+<14>Oct 17 14:24:20 cloud-init: #############################################################
+-----BEGIN SSH HOST KEY KEYS-----
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBErxu0QwshM3Pea2EFYMheUCs2CmztOYN3K8ks8E2t2e9B9x3JQwttRzqGL/O8VGF9+invRTBlOaP9QpP7k5QIw= root@ip-10-0-143-130.eu-north-1.compute.internal
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILsG4/CLgfz/RJn7jrwKHsV2s+HareG2rKfTPJ9uZVuC root@ip-10-0-143-130.eu-north-1.compute.internal
+-----END SSH HOST KEY KEYS-----
+[    7.531489] cloud-init[1948]: Cloud-init v. 22.2.2 finished at Sat, 17 Oct 2026 14:24:20 +0000. Datasource DataSourceEc2.  Up 7.52 seconds
+2026/10/17 14:24:21Z: Amazon SSM Agent v3.3.5390.0 is running
+2026/10/17 14:24:21Z: OsProductName: Amazon Linux
+2026/10/17 14:24:21Z: OsVersion: 2023
+
+Amazon Linux 2023.12.20261016
+Kernel 6.18.54-121.166.amzn2023.x86_64 on an x86_64 (-)
+
+ip-10-0-143-130 login: [24132.765779] zram_generator::config[40708]: zram0: system has too much memory (913MB), limit is 800MB, ignoring.
+[24133.003441] zram_generator::config[40744]: zram0: system has too much memory (913MB), limit is 800MB, ignoring.
+[24133.298293] zram_generator::config[40772]: zram0: system has too much memory (913MB), limit is 800MB, ignoring.
