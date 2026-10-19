@@ -72,11 +72,16 @@ Region: `eu-north-1` for the network and the application, `eu-west-1` for the si
 <a id="demo"></a>
 ## 🎬 Demo
 
-**Demo video:** [`screenshots/demo.mp4`](screenshots/demo.mp4?raw=true)
+**Videos:** [Google Drive folder](https://drive.google.com/drive/folders/1DabY59yqN3LdsDXACONJj9Xtu5_08cVZ?usp=sharing)
 
-The project was deployed on AWS for the review and torn down afterwards, so the screenshots in [`screenshots/`](screenshots/) and the video document the live run.
+| Video | What it shows |
+|---|---|
+| `demo.mp4` | The Vault website end to end: create a link, open it once, the secret is gone |
+| `11-ssm-session.mp4` | Session Manager into the private server, then a check that the database answers |
+| `22-waf-rate-limit.mp4` | The WAF rate limit: `200` responses turning into `403` |
+| `28-incident-response.mp4` | The incident drill: isolation, evidence snapshot, recovery |
 
-▶ [Watch the incident response drill](screenshots/28-incident-response.mp4?raw=true)
+The project was deployed on AWS for the review and torn down afterwards, so the videos and the screenshots in [`screenshots/`](screenshots/) document the live run.
 
 ---
 
