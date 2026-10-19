@@ -250,7 +250,7 @@ If Ping status stays `Offline`, recheck the three endpoints before rebooting the
 
 </details>
 
-<p align="center">▶ <a href="screenshots/11-ssm-session.mp4?raw=true">Watch the recording: Session Manager session</a></p>
+<p align="center">▶ <a href="https://drive.google.com/drive/folders/1DabY59yqN3LdsDXACONJj9Xtu5_08cVZ?usp=sharing">Watch the recording: Session Manager session</a> <sub>(11-ssm-session.mp4, Google Drive)</sub></p>
 
 ---
 
@@ -573,7 +573,7 @@ The core rule set also rejects request bodies over 8 KB. The vault limits a secr
 
 Against the CloudFront domain (`/api/health`), 250 requests should produce `200` and then `403`. A query of `?q=<script>alert(1)</script>` should be `403`. Sampled requests in the Web ACL confirm the blocks. If the rate rule never trips, check that the function is attached to `/api/*` as a viewer request and that the origin request policy is `AllViewer`.
 
-<p align="center">▶ <a href="screenshots/22-waf-rate-limit.mp4?raw=true">Watch the recording: WAF rate limit</a></p>
+<p align="center">▶ <a href="https://drive.google.com/drive/folders/1DabY59yqN3LdsDXACONJj9Xtu5_08cVZ?usp=sharing">Watch the recording: WAF rate limit</a> <sub>(22-waf-rate-limit.mp4, Google Drive)</sub></p>
 
 ---
 
@@ -749,7 +749,7 @@ The ALB should then return `502` or `503`, the target should go `Unhealthy`, and
 
 **6. Recover.** Launch a new instance from the `sn-app-golden` image, named `sn-app-a2`, in the app subnet, on `sn-app-sg`, with the `sn-ec2-ssm-role` profile, no public IP, and register it to `sn-app-tg`. The vault service starts at boot and reads its settings from Parameter Store. Deregister the isolated instance. Once the snapshot is `Completed` and the new target is `Healthy`, terminate `sn-app-a`. The vault comes back, not just the lab page.
 
-<p align="center">▶ <a href="screenshots/28-incident-response.mp4?raw=true">Watch the recording: Incident response drill</a></p>
+<p align="center">▶ <a href="https://drive.google.com/drive/folders/1DabY59yqN3LdsDXACONJj9Xtu5_08cVZ?usp=sharing">Watch the recording: Incident response drill</a> <sub>(28-incident-response.mp4, Google Drive)</sub></p>
 
 ---
 
